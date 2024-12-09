@@ -69,3 +69,13 @@ TODO: probably also with one side, it's to the side????
 draftMode = false;
 ```
 If true, included graphics are replaced by empty rectangles (of same size) and overfull boxes (in margin space) are marked with black box (-> easy to spot!).
+
+
+### htldocBuildDir
+```
+htldocVersion = "github:c2vi/htldoc/master";
+```
+The Nix Flake URL of the htldoc Version to use for the build.
+
+
+

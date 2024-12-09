@@ -4,6 +4,7 @@
 # a list of all options, that can be set here can be found on https://github.com/c2vi/htldoc/blob/main/diplomarbeit/options.md
 
 { ... }: {
+  template = "diploma";
 
   # the options you HAVE to change
   ###############################################

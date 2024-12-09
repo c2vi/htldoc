@@ -20,7 +20,8 @@
         pandoc
       ];
       text = ''
-        echo pwd is: $(pwd)
+        echo "pwd is: $(pwd)"
+        echo "hi is: $1"
       '';
     };
 
