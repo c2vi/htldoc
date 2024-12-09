@@ -2,7 +2,7 @@
   description = "flake for htldoc";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+		nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
 
  	  flake-utils.url = "github:numtide/flake-utils";
   };
@@ -13,16 +13,13 @@
     pkgs = nixpkgs.legacyPackages.${system};
   in
   {
-    packages.dipl.typst = pkgs.writeShellApplication {
-      name = "build typst docs";
-      runtimeInputs = with pkgs; [
-        texlive.combined.scheme-full
-        pandoc
-      ];
-      text = ''
-        echo "pwd is: $(pwd)"
-        echo "hi is: $1"
-      '';
+    packages.default = pkgs.rustPlatform.buildRustPackage rec {
+      pname = "htldoc";
+      version = "0.1.0";
+
+      cargoSha256 = "sha256-RUXtanGGTsiQVcPcZpUiz3sd+z2rWP8meCKUc2BALC4=";
+
+      src = ./.;
     };
 
     devShells.default = pkgs.mkShell {
