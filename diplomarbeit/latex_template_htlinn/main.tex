@@ -4,25 +4,7 @@
 %% V1: 9. Augugst 2021 (GreiA)
 
 
-\input{template/main_settings}
-
-%% ========================================================================
-%% Document metadata: DIESE WERTE BITTE ANPASSEN, wie werden dann automatisch auf der
-%% Titelseite angezeigt
-%% ========================================================================
-
-\newcommand{\mytitle}{TITLE} 
-\newcommand{\mysubtitle}{SUBTITITLE}
-\newcommand{\myinstitute}{Abteilung für Wirtschaftsingenieure/Betriebsinformatik} 
-\newcommand{\mysubmissionyear}{2022} %% Einreich - Jahr
-\newcommand{\mysubmissionmonth}{April} %% Monat der Einreichung
-\newcommand{\myauthor}{AUTOR1\\AUTOR2}  %% Autoren. Bitte mit \\ Trennen wenn mehrere
-\newcommand{\mysupervisor}{BETREUER1\\BETREUER2}  %%Betreuer. Bitte mit \\ Trennen wenn mehrere
-\newcommand{\myprojectpartner}{Vollständige Bezeichnung der Firma}  %% Partnerfirma
-
-\newcommand{\mysubject}{SUBJECT}  %% also used for PDF metadata (hyperref)
-\newcommand{\mykeywords}{KEYWORDS}  %% also used for PDF metadata (hyperref)
-
+\input{template/settings}
 
 %% header settings
 \usepackage{lastpage}
@@ -34,33 +16,10 @@
 \ofoot{\myauthor}
 
 
-%% ========================================================================
-%%%% MISC command definitions
-%% ========================================================================
 \input{template/mycommands}
 
-%% ========================================================================
-%%%% Typographic settings
-%% ========================================================================
 \input{template/typographic_settings}
 \input{template/listing_format}
-
-%% ========================================================================
-%%%% MISC usepackages
-%% ========================================================================
-
-%% ... it's OK to put here your own usepackage commands ...
-
-
-
-
-%% ========================================================================
-%%%% MISC self-defined commands and settings
-%% ========================================================================
-
-%% ... it's OK to put here your own newcommand/newenvironment-definitions ...
-
-
 
 
 
@@ -68,10 +27,6 @@
 %% here (Ver-\"of-fent-li-chung), you have to check for
 %% activated \usepackage[T1]{fontenc} in the preamble
 
-%% override default language of babel: (be sure to know, what you're
-%% doing here)
-%\selectlanguage{american}
-\selectlanguage{ngerman}
 
 %% ========================================================================
 %% bibtex für die Literaturverwaltung: Hier wird der Zitier-Stil festgelegt

@@ -1,22 +1,48 @@
+{ config, lib, ... }: let
+
+# TODO make a german version
+monthMap = [ "Jänner" "Februar" "März" "Aprill" "Mai" "Juni" "Juli" "August" "September" "Oktober" "November" "Dezember" ];
+
+submission = if lib.strings.hasInfix "-" config.submissionDate then rec {
+  split = lib.strings.splitString "-" config.submissionDate;
+  year = builtins.elemAt split 0;
+  monthNum = builtins.elemAt split 1;
+  month = builtins.elemAt monthMap monthNum;
+  day = builtins.elemAt split 2;
+} else rec {
+  split = lib.strings.splitString "." config.submissionDate;
+  day = builtins.elemAt split 0;
+  monthNum = builtins.elemAt split 1;
+  month = builtins.elemAt monthMap monthNum;
+  year = builtins.elemAt split 2;
+};
+
+
+in ''
+
+
+${if config.twoSidePrinting then 
+  ''\newcommand{\mylaterality}{twoside}''
+else
+  ''\newcommand{\mylaterality}{oneside}''
+}
+
+
+${if config.draftMode then 
+  ''\newcommand{\mydraft}{true}''
+else
+  ''\newcommand{\mydraft}{false}''
+}
+
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Allgemeine Festlegungen für die Darstellung des Gesamtdokumentes;
+%% Here folows some default config, that you won't have to change while using the template
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\mypapersize}{A4}
 %% e.g., "A4", "letter", "legal", "executive", ...
 %% The size of the paper of the resulting PDF file.
 
-\newcommand{\mylaterality}{twoside}
-%% "oneside" or "twoside"
-%% Either you are creating a document which is printed on both, left pages
-%% and right pages (twoside) or you create a document which is printed
-%% on right pages only (oneside).
-
-\newcommand{\mydraft}{false}
-%% "true" or "false"
-%% Use draft mode? If true, included graphics are replaced by empty
-%% rectangles (of same size) and overfull boxes (in margin space) are
-%% marked with black box (-> easy to spot!)
 
 \newcommand{\myparskip}{half}
 %% e.g., "no", "full", "half", ...
@@ -89,9 +115,18 @@
 %% Options for the todonotes-package. If "disable", all todonotes will
 %% be hidden (including listoftodos).
 
-%% Load main settings for document preamble:
-\input{template/preamble}%% DO NOT REMOVE THIS LINE!
 
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Load document preamble
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{template/preamble}
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% then the setboolean settings
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \setboolean{myaddcolophon}{true}  %% "true" or "false"
 %% If set to "true": a colophon (with notes about this document
 %% template, LaTeX, ...) is added after the title page.
@@ -107,4 +142,28 @@
 %% If set to "true": the language of the statutory declaration text is set to
 %% English, otherwise it is in German.
 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% here follows stuff, that was previously in the main.tex file
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+\newcommand{\mytitle}{${config.title}} 
+\newcommand{\mysubtitle}{${config.subtitle}}
+\newcommand{\myinstitute}{${config.institute}}
+\newcommand{\mysubmissionyear}{${submission.year}}
+\newcommand{\mysubmissionmonth}{${submission.month}}
+\newcommand{\myauthor}{${lib.strings.concatStringSep ''\\'' config.authors}}
+\newcommand{\mysupervisor}{${lib.strings.concatStringSep ''\\'' config.supervisors}}
+\newcommand{\myprojectpartner}{${config.partner}}
+
+\newcommand{\mysubject}{${config.subject}}  %% also used for PDF metadata (hyperref)
+\newcommand{\mykeywords}{${lib.strings.concatStringSep " " config.keywords}}  %% also used for PDF metadata (hyperref)
+
+
+
+%% override default language of babel: (be sure to know, what you're
+%% doing here)
+\selectlanguage{${config.lang}}
+
+
+''
