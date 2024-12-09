@@ -1,10 +1,17 @@
 
-# Die HTL Diplomarbeit
+# The HTL Diploma Thesis
 
-## Latex Vorlage
-zu finden in ./latex_template_htlinn, oder im Diplomarbeits Moodle Kurs: https://moodle2.htlinn.ac.at/course/view.php?id=399
+## Latex Template
+The original template is in ./original_latex_template_htlinn, or it can be downloaded from the [diploma thesis moodle course](https://moodle2.htlinn.ac.at/course/view.php?id=399). In ./latex_template_htlinn is a modified version, to be used with the htldoc tool.
 
-### Struktur
+## How to use it with htldoc
+
+TODO
+
+Documentation for all the options can be found in [./options.md](./options.md)
+
+
+### structure of the original_latex_template_htlinn
 - content
     - abstract.tex              Hier kommen das deutsche und englische Abstract rein
     - einleitung.tex            Grundsätzliches zur gesamten Arbeit, auch indiv. Aufteilung der Arbeiten
@@ -27,3 +34,4 @@ zu finden in ./latex_template_htlinn, oder im Diplomarbeits Moodle Kurs: https:/
     - preamble.tex              Hier kommen die ganzen imports hin
     - itle_thesis_htlinn.tex    Das Titelblatt, hier werden die Infos von main.tex eingebaut
     - typographic_settings.tex  Hier sollte man wenig ändern müssen
+
