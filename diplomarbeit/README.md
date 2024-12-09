@@ -11,7 +11,7 @@ TODO
 Documentation for all the options can be found in [./options.md](./options.md)
 
 
-### structure of the original_latex_template_htlinn
+## structure of the original_latex_template_htlinn
 - content
     - abstract.tex              Hier kommen das deutsche und englische Abstract rein
     - einleitung.tex            Grundsätzliches zur gesamten Arbeit, auch indiv. Aufteilung der Arbeiten
