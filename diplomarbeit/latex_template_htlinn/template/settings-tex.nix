@@ -152,12 +152,12 @@ else
 \newcommand{\myinstitute}{${config.institute}}
 \newcommand{\mysubmissionyear}{${submission.year}}
 \newcommand{\mysubmissionmonth}{${submission.month}}
-\newcommand{\myauthor}{${lib.strings.concatStringSep ''\\'' config.authors}}
-\newcommand{\mysupervisor}{${lib.strings.concatStringSep ''\\'' config.supervisors}}
+\newcommand{\myauthor}{${lib.strings.concatStringsSep ''\\'' config.authors}}
+\newcommand{\mysupervisor}{${lib.strings.concatStringsSep ''\\'' config.supervisors}}
 \newcommand{\myprojectpartner}{${config.partner}}
 
 \newcommand{\mysubject}{${config.subject}}  %% also used for PDF metadata (hyperref)
-\newcommand{\mykeywords}{${lib.strings.concatStringSep " " config.keywords}}  %% also used for PDF metadata (hyperref)
+\newcommand{\mykeywords}{${lib.strings.concatStringsSep " " config.keywords}}  %% also used for PDF metadata (hyperref)
 
 
 
