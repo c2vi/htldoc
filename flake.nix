@@ -26,5 +26,7 @@
       buildInputs = with pkgs; [ texlive.combined.scheme-full ];
     };
 
+    inherit self;
+
   });
 }
