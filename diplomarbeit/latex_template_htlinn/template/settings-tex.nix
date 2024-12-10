@@ -7,13 +7,13 @@ submission = if lib.strings.hasInfix "-" config.submissionDate then rec {
   split = lib.strings.splitString "-" config.submissionDate;
   year = builtins.elemAt split 0;
   monthNum = builtins.elemAt split 1;
-  month = builtins.elemAt monthMap monthNum;
+  month = builtins.elemAt monthMap (lib.strings.toInt monthNum);
   day = builtins.elemAt split 2;
 } else rec {
   split = lib.strings.splitString "." config.submissionDate;
   day = builtins.elemAt split 0;
   monthNum = builtins.elemAt split 1;
-  month = builtins.elemAt monthMap monthNum;
+  month = builtins.elemAt monthMap (lib.strings.toInt monthNum);
   year = builtins.elemAt split 2;
 };
 
