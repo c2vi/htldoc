@@ -37,6 +37,7 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     let settings_tex_output = Command::new("nix")
         .arg("eval")
         .arg("--impure")
+        .arg("--raw")
         .arg("--expr")
         .arg(format!(r#"
             let 
