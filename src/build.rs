@@ -76,20 +76,20 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
         .arg("--hash")
         .output();
         ;
-    if Ok(nixpkgs_version_output) = nixpkgs_version_output_result {
+    if let Ok(nixpkgs_version_output) = nixpkgs_version_output_result {
         if !nixpkgs_version_output.status.success() {
             println!("{}", String::from_utf8(nixpkgs_version_output.stderr).unwrap());
             return  Err("failed to get the nixpkgs_version with the nixos-version command".to_owned());
         } else {
-            nixpkgs_version = Some(String::from_utf8(nixpkgs_version_output.stout).expect("not utf8"));
+            nixpkgs_version = Some(String::from_utf8(nixpkgs_version_output.stdout).expect("not utf8"));
         }
     }
 
     let settings_tex = Command::new("nix")
         .current_dir(build_path.as_path())
         .arg("shell")
-        .arg(format!("nixpkgs/{}#pandoc", nixpkgs_version))
-        .arg(format!("nixpkgs/{}#texlive.combined.scheme-full", nixpkgs_version))
+        .arg(format!("nixpkgs/{}#pandoc", nixpkgs_version.as_ref().unwrap()))
+        .arg(format!("nixpkgs/{}#texlive.combined.scheme-full", nixpkgs_version.as_ref().unwrap()))
         .arg("-c")
         .arg("pdflatex")
         .arg("main.tex")
