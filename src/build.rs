@@ -1,4 +1,7 @@
+use std::io::stderr;
+use std::io::Write;
 use std::process::Command;
+use std::process::Stdio;
 use std::path::PathBuf;
 
 use clap::ArgMatches;
@@ -40,6 +43,14 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     println!("build_path: {}", build_path.display());
 
 
+    let chmod_output = Command::new("chmod")
+        .arg("+w")
+        .arg("-R")
+        .arg(format!("{}", build_path.as_path().display()))
+        .output().expect("failed to run chmod +w")
+        ;
+
+
     // generate settings.tex from config.nix
     let settings_tex_output = Command::new("nix")
         .arg("eval")
@@ -48,12 +59,12 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
         .arg("--expr")
         .arg(format!(r#"
             let 
-                htldocFlake = builtins.getFlake {htldoc_version};
+                htldocFlake = builtins.getFlake "{htldoc_version}";
                 pkgs = import htldocFlake.inputs.nixpkgs {{}};
                 lib = pkgs.lib;
                 defaultConfig = import {}/diplomarbeit/default-config.nix {{ }};
                 userConfig = import {}/htldoc.nix {{ }};
-                config = defaultConfig // userConfig;
+                config = userConfig // defaultConfig;
             in import {}/diplomarbeit/latex_template_htlinn/template/settings-tex.nix {{ inherit config lib; }}
         "#, template_path.display(), src_path.display(), template_path.display()))
         .output().expect("failed to eval the $template/diplomarbeit/latex_template_htlinn/template/settings-tex.nix")
@@ -68,7 +79,6 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
 
 
     // run latex build commands
-    // nix shell $nip#pandoc $nip#texlive.combined.scheme-full -c pandoc $infile -o out.pdf --template ~/work/latex/templates/eisvogel/eisvogel.tex --listings
     // github:nixos/nixpkgs/$(nixos-version --hash)
     // use the nixpkgs version from the nixos-version command, if available
     let mut nixpkgs_version: Option<String> = None;
@@ -81,11 +91,15 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
             println!("{}", String::from_utf8(nixpkgs_version_output.stderr).unwrap());
             return  Err("failed to get the nixpkgs_version with the nixos-version command".to_owned());
         } else {
-            nixpkgs_version = Some(String::from_utf8(nixpkgs_version_output.stdout).expect("not utf8"));
+            let mut tmp = String::from_utf8(nixpkgs_version_output.stdout).expect("not utf8");
+            tmp.pop(); // remove the \n at the  end
+            nixpkgs_version = Some(tmp);
         }
+    } else {
+        nixpkgs_version = Some("master".to_owned())
     }
 
-    let settings_tex = Command::new("nix")
+    let build_output = Command::new("nix")
         .current_dir(build_path.as_path())
         .arg("shell")
         .arg(format!("nixpkgs/{}#pandoc", nixpkgs_version.as_ref().unwrap()))
@@ -93,8 +107,13 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
         .arg("-c")
         .arg("pdflatex")
         .arg("main.tex")
-        .output().expect("failed to eval the $template/diplomarbeit/latex_template_htlinn/template/settings-tex.nix")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .stdin(Stdio::inherit())
+        .output().expect("failed to run the pdflatex build command")
         ;
+
+    
 
 
 

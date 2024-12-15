@@ -16,7 +16,7 @@
 
   supervisors = [ "SUPERVISOR 1" "SUPERVISOR 2" ];
 
-  partner = "";
+  partner = "-";
 
   subject = "";
 
