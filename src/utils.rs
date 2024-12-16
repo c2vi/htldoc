@@ -71,7 +71,7 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<
     Ok(())
 }
 
-pub fn template_path(htldoc_version: &str) -> PathBuf {
+pub fn template_dir(htldoc_version: &str) -> PathBuf {
     let template_path_string = run_fun!(nix eval --raw ${htldoc_version}#self.outPath).expect("failed to get #self.outPath of the htldocVersion in the htldoc.nix");
 
     let template_path = PathBuf::from(template_path_string);

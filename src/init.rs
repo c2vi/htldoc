@@ -1,3 +1,4 @@
+use std::fs::copy;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
@@ -8,6 +9,15 @@ use cmd_lib::run_cmd;
 
 
 pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
+
+    /////// get the template to init
+    let template = match sub_matches.get_one::<String>("template") {
+        Some(tempalte) => tempalte.to_owned(),
+        None => {
+            return Err("no tempalte name specified".to_owned());
+        },
+    };
+
 
     ////////// get the dest_dir path
     let dest_dir = match sub_matches.get_one::<String>("path") {
@@ -33,20 +43,24 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     };
 
 
-    //////// get template_path
-    let template_path = crate::utils::template_path(htldoc_version.as_str());
+    //////// get template_dir
+    let template_dir = crate::utils::template_dir(htldoc_version.as_str());
 
 
-    run_dipl(dest_dir, htldoc_version, template_path)?;
+    if template.as_str() == "dipl" {
+        run_dipl(dest_dir, htldoc_version, template_dir)?;
+    } else {
+        return Err(format!("template named {} not implemented", template));
+    }
 
 
     Ok(())
 }
 
-pub fn run_dipl(dest_dir: PathBuf, htldoc_version: String, template_path: PathBuf) -> Result<(), String> {
+pub fn run_dipl(dest_dir: PathBuf, htldoc_version: String, template_dir: PathBuf) -> Result<(), String> {
 
     ////////// eval the htldoc.nix into there
-    let expr = format!("import {}/diplomarbeit/htldoc-nix.nix {{ htldocVersion = \"{}\"; }}", template_path.display(), htldoc_version);
+    let expr = format!("import {}/diplomarbeit/htldoc-nix.nix {{ htldocVersion = \"{}\"; }}", template_dir.display(), htldoc_version);
     run_cmd!(nix eval --raw --impure --expr $expr > ${dest_dir}/htldoc.nix).expect("failed to create htldoc.nix");
 
 
@@ -56,6 +70,10 @@ pub fn run_dipl(dest_dir: PathBuf, htldoc_version: String, template_path: PathBu
 
     ////////// create the img dir
     create_dir_all(dest_dir.as_path().join("img")).unwrap();
+
+    //// copy abstract.md
+    run_cmd!(cp ${template_dir}/diplomarbeit/abstract.md ${dest_dir}/src/).unwrap();
+    run_cmd!(chmod +w ${dest_dir}/src/abstract.md).unwrap();
 
 
     /////// write .gitignore file

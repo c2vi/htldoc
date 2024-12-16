@@ -47,7 +47,12 @@ fn cli_matches() -> clap::ArgMatches {
                     .alias("ver")
                     .help("The htldocVersion put into the htldoc.nix file")
                 )
-                .arg(Arg::new("path"))
+                .arg(Arg::new("template")
+                    .help("the template to be used. one of: dipl, cv, doc, eis")
+                )
+                .arg(Arg::new("path")
+                    .help("the path, where to init the template at. if ommited PWD is used")
+                )
             )
         .subcommand(
                 Command::new("build")

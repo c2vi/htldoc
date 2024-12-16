@@ -10,38 +10,41 @@ use crate::utils;
 
 
 pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
-    let mut src_path = std::env::current_dir().map_err(|e| format!("{}", e))?;
-    let build_path = src_path.as_path().join("build");
+    let mut src_dir = std::env::current_dir().map_err(|e| format!("{}", e))?;
+    let build_dir = src_dir.as_path().join("build");
     let htldoc_version = crate::utils::htldoc_version();
     let nixpkgs_rev = crate::utils::nixpkgs_version();
-    let template_path = crate::utils::template_path(htldoc_version.as_str());
+    let template_dir = crate::utils::template_dir(htldoc_version.as_str());
 
-    // create the build dir
-    std::fs::create_dir_all(build_path.as_path());
+    /////// create the build dir
+    std::fs::create_dir_all(build_dir.as_path());
 
 
-    // copy template files to build_path
-    utils::copy_dir_all(template_path.as_path().join("diplomarbeit").join("latex_template_htlinn"), build_path.as_path()).expect("error while copying template files into the build folder");
+    /////// copy template files to build_dir
+    utils::copy_dir_all(template_dir.as_path().join("diplomarbeit").join("latex_template_htlinn"), build_dir.as_path()).expect("error while copying template files into the build folder");
 
-    // print path infos
+
+    /////// print path infos
     println!("htldoc_ersion: {}", htldoc_version);
     println!("nixpkgs_rev: {}", nixpkgs_rev);
-    println!("src_path: {}", src_path.display());
-    println!("template_path: {}", template_path.display());
-    println!("build_path: {}", build_path.display());
+    println!("src_dir: {}", src_dir.display());
+    println!("template_dir: {}", template_dir.display());
+    println!("build_dir: {}", build_dir.display());
 
 
     let chmod_output = Command::new("chmod")
         .arg("+w")
         .arg("-R")
-        .arg(format!("{}", build_path.as_path().display()))
+        .arg(format!("{}", build_dir.as_path().display()))
         .output().expect("failed to run chmod +w")
         ;
 
-    //////// copy the source_dir to build_dir
-    run_cmd!(PWD=$src_path nix run nixpkgs/${nixpkgs_rev}#rsync -- -r . ./build --exclude build);
 
-    // generate settings.tex from htldoc.nix
+    //////// copy the source_dir to build_dir
+    run_cmd!(PWD=$src_dir nix run nixpkgs/${nixpkgs_rev}#rsync -- -r . ./build --exclude build);
+
+
+    ////// generate settings.tex from htldoc.nix
     let settings_tex_output = Command::new("nix")
         .arg("eval")
         .arg("--impure")
@@ -56,7 +59,7 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
                 userConfig = import {}/htldoc.nix {{ }};
                 config = userConfig // defaultConfig;
             in import {}/diplomarbeit/latex_template_htlinn/template/settings-tex.nix {{ inherit config lib; }}
-        "#, template_path.display(), src_path.display(), template_path.display()))
+        "#, template_dir.display(), src_dir.display(), template_dir.display()))
         .output().expect("failed to eval the $template/diplomarbeit/latex_template_htlinn/template/settings-tex.nix")
         ;
     if !settings_tex_output.status.success() {
@@ -65,14 +68,17 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     }
     let settings_tex = String::from_utf8(settings_tex_output.stdout).expect("not utf8");
 
-    std::fs::write(build_path.as_path().join("template").join("settings.tex"), settings_tex).map_err(|e| format!("from IO err: {}", e))?;
+    std::fs::write(build_dir.as_path().join("template").join("settings.tex"), settings_tex).map_err(|e| format!("from IO err: {}", e))?;
 
 
-    // run latex build commands
+    ////// generate abstract.tex
+    run_cmd!(nix run nixpkgs/${nixpkgs_rev}#pandoc -- --from markdown --to latex ${src_dir}/src/abstract.md -o ${build_dir}/abstract.tex).unwrap();
 
+
+    ////// run latex build commands
     println!("################### RUNNING PDFLATEX ###################");
     let build_output = Command::new("nix")
-        .current_dir(build_path.as_path())
+        .current_dir(build_dir.as_path())
         .arg("shell")
         .arg(format!("nixpkgs/{}#pandoc", nixpkgs_rev))
         .arg(format!("nixpkgs/{}#texlive.combined.scheme-full", nixpkgs_rev))
