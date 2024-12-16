@@ -1,6 +1,38 @@
 use std::process::Command;
 use std::{io, fs};
 use std::path::Path;
+use cmd_lib::run_fun;
+
+pub fn nixpkgs_version() -> String {
+    // get the nixpkgs version to use
+    // use the nixpkgs version from the nixos-version command, if available by default
+    // else use the version used by the htldoc flake
+    let mut nixpkgs_version: Option<String> = None;
+    let nixpkgs_version_output_result = Command::new("nixos-version")
+        .arg("--hash")
+        .output();
+        ;
+    if let Ok(nixpkgs_version_output) = nixpkgs_version_output_result {
+        if !nixpkgs_version_output.status.success() {
+            println!("{}", String::from_utf8(nixpkgs_version_output.stderr).unwrap());
+            panic!("failed to get the nixpkgs_version with the nixos-version command");
+        } else {
+            let mut tmp = String::from_utf8(nixpkgs_version_output.stdout).expect("not utf8");
+            tmp.pop(); // remove the \n at the  end
+            nixpkgs_version = Some(tmp);
+        }
+    } else {
+        let htldoc_version = htldoc_version();
+        if let Ok(res) = run_fun!(nix eval ${htldoc_version}#self.inputs.nixpkgs.rev --raw) {
+            nixpkgs_version = Some(res);
+        } else {
+            println!("using nixpkgs/master, because both previous methods (nixos-version and nixpkgs-used-by-htldoc-flake) failed");
+            nixpkgs_version = Some("master".to_owned())
+        }
+    }
+
+    return nixpkgs_version.unwrap();
+}
 
 pub fn htldoc_version() -> String {
     let output = Command::new("nix")
