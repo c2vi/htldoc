@@ -1,3 +1,4 @@
+{ htldocVersion, ... }: ''
 
 # this is a config file for a diploma thesis, that is built with the htldoc tool
 # this tool can be found on https://github.com/c2vi/htldoc
@@ -37,7 +38,9 @@
 
   twoSidePrinting = true;
 
-  htldocVersion = "github:c2vi/htldoc/master"; # can be used to pin a specific version of htldoc
+  htldocVersion = "${htldocVersion}"; # can be used to pin a specific version of htldoc
 
   htldocBuildDir = "./build"; # where to put build artefacts into
 }
+
+''

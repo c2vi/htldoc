@@ -42,6 +42,12 @@ fn cli_matches() -> clap::ArgMatches {
         .subcommand(Command::new("init")
                 .about("create a new documentation inside a folder")
                 .aliases(["i"])
+                .arg(Arg::new("htldocVersion")
+                    .long("htldocVersion")
+                    .alias("ver")
+                    .help("The htldocVersion put into the htldoc.nix file")
+                )
+                .arg(Arg::new("path"))
             )
         .subcommand(
                 Command::new("build")
@@ -51,3 +57,5 @@ fn cli_matches() -> clap::ArgMatches {
 
     return main.get_matches();
 }
+
+

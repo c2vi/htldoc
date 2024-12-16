@@ -14,27 +14,13 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     let build_path = src_path.as_path().join("build");
     let htldoc_version = crate::utils::htldoc_version();
     let nixpkgs_rev = crate::utils::nixpkgs_version();
+    let template_path = crate::utils::template_path(htldoc_version.as_str());
 
     // create the build dir
     std::fs::create_dir_all(build_path.as_path());
 
 
     // copy template files to build_path
-    let template_path_output = Command::new("nix")
-        .arg("eval")
-        .arg(format!("{}#self.outPath", htldoc_version))
-        .output().expect("failed to get #self.outPath of the htldocVersion in the htldoc.nix")
-        ;
-    let mut template_path_string = String::from_utf8(template_path_output.stdout).expect("not utf8");
-    if !template_path_output.status.success() {
-        println!("{}", String::from_utf8(template_path_output.stderr).unwrap());
-        return  Err("failed to get the template_path_output".to_owned());
-    }
-    template_path_string.pop(); // remove \n
-    template_path_string.pop(); // remove the " at the end
-    template_path_string.remove(0); // remove the " at the begining
-    let template_path = PathBuf::from(template_path_string);
-
     utils::copy_dir_all(template_path.as_path().join("diplomarbeit").join("latex_template_htlinn"), build_path.as_path()).expect("error while copying template files into the build folder");
 
     // print path infos
