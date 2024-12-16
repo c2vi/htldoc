@@ -17,7 +17,9 @@
       pname = "htldoc";
       version = "0.1.0";
 
-      cargoSha256 = "sha256-RUXtanGGTsiQVcPcZpUiz3sd+z2rWP8meCKUc2BALC4=";
+      nativeBuildInputs = [ pkgs.nix ];
+
+      cargoSha256 = "sha256-qNAIexEx9WhxPa0qIdaaBnjZJiENaiaIML0/aXpbJp0=";
 
       src = ./.;
     };
