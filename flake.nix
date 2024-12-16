@@ -17,7 +17,7 @@
       pname = "htldoc";
       version = "0.1.0";
 
-      nativeBuildInputs = [ pkgs.nix ];
+      nativeBuildInputs = with pkgs; [ nix coreutils rsync ];
 
       cargoSha256 = "sha256-qNAIexEx9WhxPa0qIdaaBnjZJiENaiaIML0/aXpbJp0=";
 
