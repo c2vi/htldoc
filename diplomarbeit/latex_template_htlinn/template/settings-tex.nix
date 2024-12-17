@@ -159,6 +159,9 @@ else
 \newcommand{\mysubject}{${config.subject}}  %% also used for PDF metadata (hyperref)
 \newcommand{\mykeywords}{${lib.strings.concatStringsSep " " config.keywords}}  %% also used for PDF metadata (hyperref)
 
+\newcommand{\myChapterDefinitions}{
+  ${config.chapters}
+}
 
 
 %% override default language of babel: (be sure to know, what you're

@@ -34,6 +34,13 @@ fn cli_matches() -> clap::ArgMatches {
         .version(crate_version!())
         .author("c2vi (Sebastian Moser)")
         .about("a quick tool to write documents with markdown, typst and latex")
+        .arg(Arg::new("verbose")
+            .id("verbose")
+            .action(clap::ArgAction::SetTrue)
+            .short('v')
+            .long("verbose")
+            .global(true)
+        )
         .subcommand(
                 Command::new("run-pinned-version")
                 .aliases(["rp"])

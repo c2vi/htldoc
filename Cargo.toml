@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.23", features = ["cargo"] }
 cmd_lib = "1.9.5"
+pathdiff = "0.2.3"
