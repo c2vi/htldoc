@@ -5,6 +5,7 @@ use std::process::Stdio;
 use std::path::PathBuf;
 use clap::ArgMatches;
 use cmd_lib::run_cmd;
+use cmd_lib::run_fun;
 
 use crate::utils;
 
@@ -20,9 +21,6 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     std::fs::create_dir_all(build_dir.as_path());
 
 
-    /////// copy template files to build_dir
-    utils::copy_dir_all(template_dir.as_path().join("diplomarbeit").join("latex_template_htlinn"), build_dir.as_path()).expect("error while copying template files into the build folder");
-
 
     /////// print path infos
     println!("htldoc_ersion: {}", htldoc_version);
@@ -32,6 +30,30 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     println!("build_dir: {}", build_dir.display());
 
 
+    //////// sync the source_dir to build_dir
+    run_cmd!(PWD=$src_dir nix run nixpkgs/${nixpkgs_rev}#rsync -- -r . ./build --exclude build);
+
+
+    /////// find out what template shall be built
+    let expr = format!("let userConfig = import {}/htldoc.nix {{ }}; in userConfig.template", src_dir.display());
+    let res = run_fun!(nix eval --expr $expr --raw --impure).unwrap();
+
+    if res.as_str() == "dipl" {
+        return build_dipl(template_dir, build_dir, src_dir, htldoc_version, nixpkgs_rev);
+    } else {
+        panic!("template: '{}' not known", res);
+    }
+    
+
+
+    Ok(())
+}
+
+pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, htldoc_version: String, nixpkgs_rev: String) -> Result<(), String> {
+
+    /////// copy template files to build_dir
+    utils::copy_dir_all(template_dir.as_path().join("diplomarbeit").join("latex_template_htlinn"), build_dir.as_path()).expect("error while copying template files into the build folder");
+
     let chmod_output = Command::new("chmod")
         .arg("+w")
         .arg("-R")
@@ -39,9 +61,6 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
         .output().expect("failed to run chmod +w")
         ;
 
-
-    //////// copy the source_dir to build_dir
-    run_cmd!(PWD=$src_dir nix run nixpkgs/${nixpkgs_rev}#rsync -- -r . ./build --exclude build);
 
 
     ////// generate settings.tex from htldoc.nix
