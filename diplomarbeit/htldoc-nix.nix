@@ -22,6 +22,16 @@
 
   supervisors = [ "SUPERVISOR 1" "SUPERVISOR 2" ];
 
+  # here you define all the chapters of the document
+  # this is, because typst and markdown don't have chapters so tha \chapter{} is added by htldoc
+  # you therefore must not add a \chapter in your tex src files
+  # the order of chapters and files in a chapter is kept like how it's defined here
+  # filenames are relative to the ./src folder, subfolders work
+  chapters = [
+    [ "ChapterName" "file.tex" "reference_shortname" ]
+    [ "ChapterName" [ "file1.md" "file2.typ" "file3.tex" ] "reference_shortname" ]
+  ];
+
 
   # some other usefull options
   ###############################################

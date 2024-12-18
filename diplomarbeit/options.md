@@ -28,6 +28,15 @@ Either in format yyyy-mm-dd or in dd.mm.yyyy.
 authors = [ "AUTHOR 1" "AUTHOR 2" ];
 ```
 
+### chapters
+In the original template, you would use `\chapter{My Chapter}`, but because markdown and typst don't have a concept of chapters you have to define your chapters in this config file and htldoc will then add the needed `\chapter{}` commands to the generated latex. The order of chapters and files in a chapter is kept like how it's defined in this file. Filenames are relative to the ./src folder, subfolders work. A chapter spanning muitiple files also works.
+```
+chapters = [
+    [ "ChapterName" "file.tex" "reference_shortname" ]
+    [ "ChapterName" [ "file1.md" "file2.typ" "./subfolder/file3.tex" ] "reference_shortname" ]
+];
+```
+
 ### supervisors
 ```
 supervisors = [ "SUPERVISOR 1" "SUPERVISOR 2" ];

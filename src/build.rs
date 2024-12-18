@@ -7,8 +7,16 @@ use std::path::PathBuf;
 use clap::ArgMatches;
 use cmd_lib::run_cmd;
 use cmd_lib::run_fun;
+use json::JsonValue;
 
 use crate::utils;
+
+#[derive(Debug)]
+pub struct Chapter {
+    name: String,
+    files: Vec<SrcFile>,
+    reference: String,
+}
 
 #[derive(Debug)]
 pub struct SrcFile {
@@ -59,8 +67,6 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     } else {
         panic!("template: '{}' not known", res);
     }
-    
-
 
     Ok(())
 }
@@ -80,28 +86,59 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
 
     ///// find the src files
     let src_files = get_src_files(src_dir.join("src").as_path());
-    let mut chapter_definitions = String::new();
+    let chapters = get_chapters(&src_dir);
 
-    println!("src files: {:?}", src_files);
+    let mut chapter_text = String::new();
 
-    for file in src_files {
-        let rel_path = pathdiff::diff_paths(file.path.as_path(), src_dir.as_path()).unwrap();
-        match file.kind {
-            SrcFileType::Latex => {
-                let path_of_file = rel_path.parent().unwrap();
 
-                let file_path = file.path.as_path();
-                run_cmd!(cp ${file_path} ${build_dir}/${rel_path});
+    for file in src_files.as_slice() {
+        println!("src file: {}", file.path.display());
+    };
 
-                chapter_definitions += format!(r#"
+
+    for chapter in chapters {
+
+        chapter_text += format!(r#"
+            \\chapter{{ {} }}
+            \\label{{ {} }}
+        "#, chapter.name, chapter.reference).as_str();
+
+        // convert or copy every file into the build_dir
+        // and include this file in the chapter_text
+        for file in chapter.files {
+
+            // the relative path to the src_dir
+            let rel_path = pathdiff::diff_paths(file.path.as_path(), src_dir.as_path()).unwrap();
+
+            // the folder part of this rel_path
+            let dir_of_file = rel_path.parent().unwrap();
+
+            // the full path fo the src_file
+            let file_path = file.path.as_path();
+
+            let file_name = file.name.as_str();
+
+            match file.kind {
+
+                SrcFileType::Latex => {
+                    run_cmd!(cp ${file_path} ${build_dir}/${rel_path}).unwrap();
+                }
+
+                SrcFileType::Markdown => {
+                    run_cmd!(nix run nixpkgs/${nixpkgs_rev}#pandoc -- --from markdown --to latex ${file_path} -o ${build_dir}/${dir_of_file}/${file_name}.tex ).unwrap();
+                }
+
+                SrcFileType::Typst => {
+                    run_cmd!(nix run nixpkgs/${nixpkgs_rev}#pandoc -- --from typst --to latex ${file_path} -o ${build_dir}/${dir_of_file}/${file_name}.tex ).unwrap();
+                }
+            }
+
+            chapter_text += format!(r#"
                 \\input{{ {}/{} }}
-                "#, path_of_file.display(), file.name).as_str();
-            }
-            SrcFileType::Markdown => {
-            }
-            SrcFileType::Typst => {
-            }
-        }
+            "#, dir_of_file.display(), file.name).as_str();
+        };
+
+
     }
 
 
@@ -118,7 +155,7 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
                 lib = pkgs.lib;
                 defaultConfig = import {}/diplomarbeit/default-config.nix {{ }};
                 userConfig = import {}/htldoc.nix {{ }};
-                config = userConfig // defaultConfig // {{ chapters = "{chapter_definitions}"; }};
+                config = userConfig // defaultConfig // {{ chapters_text = "{chapter_text}"; }};
             in import {}/diplomarbeit/latex_template_htlinn/template/settings-tex.nix {{ inherit config lib; }}
         "#, template_dir.display(), src_dir.display(), template_dir.display()))
         .output().expect("failed to eval the $template/diplomarbeit/latex_template_htlinn/template/settings-tex.nix")
@@ -158,6 +195,11 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
         .stdin(Stdio::inherit())
         .output().expect("pdflatex build command failed")
         ;
+    
+
+    ////// move the main.pdf to out.pdf
+    run_cmd!(mv ${build_dir}/main.pdf ${build_dir}/out.pdf);
+
 
     Ok(())
 }
@@ -198,6 +240,79 @@ pub fn get_src_files(dir: &Path) -> Vec<SrcFile> {
         }
     }
     return files;
+}
+
+pub fn get_chapters(src_dir: &Path) -> Vec<Chapter> {
+    println!("chapters:");
+
+    let mut chapters: Vec<Chapter> = Vec::new();
+
+    let chapters_json_str: String = run_fun!(nix eval --json --impure --expr "let config = import ${src_dir}/htldoc.nix {}; in config.chapters").unwrap();
+    let chapters_json = match json::parse(chapters_json_str.as_str()).unwrap() {
+        JsonValue::Array(vec) => vec,
+        _ => panic!("chapters definition is not of type array"),
+    };
+
+    for chapter in chapters_json {
+        let vec = match chapter {
+            JsonValue::Array(vec) => vec,
+            _ => panic!("chapter definition '{:?}' was not an array", chapter),
+        };
+
+        let name = vec.iter().nth(0).unwrap().as_str().unwrap().to_owned();
+        let file_name_json_val = vec.iter().nth(1).unwrap();
+        let file_names = if file_name_json_val.is_string() {
+            vec![ file_name_json_val.as_str().unwrap().to_owned() ]
+        } else {
+            let array = match file_name_json_val {
+                JsonValue::Array(val) => val,
+                _ => panic!(),
+            };
+            let mut vec = Vec::new();
+            for val in array {
+                vec.push(val.as_str().unwrap().to_owned());
+            }
+            vec
+        };
+
+
+        let mut files = Vec::new();
+        for file in &file_names {
+            let path = PathBuf::from(format!("{}/src/{}", src_dir.to_str().unwrap(), file));
+            let src_file = src_file_from_path(path.as_path());
+            files.push(src_file);
+        }
+
+        let reference = vec.iter().nth(2).unwrap().as_str().unwrap().to_owned();
+
+        println!("\t name: {}, files: {:?}, reference: {}", name, file_names, reference);
+        chapters.push(Chapter { name, files, reference } );
+    }
+
+    println!();
+    return chapters;
+
+}
+
+pub fn src_file_from_path(path: &Path) -> SrcFile {
+    let file_name = path.file_name().unwrap().to_str().unwrap().to_owned();
+    let name = file_name.as_str().split(".").nth(0).unwrap();
+    let type_str = file_name.as_str().split(".").last().unwrap();
+
+
+    let file = SrcFile {
+        name: name.to_owned(),
+        file_name: file_name.clone(),
+        path: path.to_path_buf(),
+        kind: match type_str {
+            "md" => SrcFileType::Markdown,
+            "typ" => SrcFileType::Typst,
+            "tex" => SrcFileType::Latex,
+            _ => { panic!("filetype {} not supported", type_str); },
+        }
+    };
+
+    return file;
 }
 
 

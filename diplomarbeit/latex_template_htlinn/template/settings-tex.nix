@@ -160,7 +160,7 @@ else
 \newcommand{\mykeywords}{${lib.strings.concatStringsSep " " config.keywords}}  %% also used for PDF metadata (hyperref)
 
 \newcommand{\myChapterDefinitions}{
-  ${config.chapters}
+  ${config.chapters_text}
 }
 
 
