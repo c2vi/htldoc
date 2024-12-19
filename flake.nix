@@ -19,7 +19,7 @@
 
       nativeBuildInputs = with pkgs; [ nix coreutils rsync ];
 
-      cargoSha256 = "sha256-qNAIexEx9WhxPa0qIdaaBnjZJiENaiaIML0/aXpbJp0=";
+      cargoSha256 = "sha256-471XHhfRxbrmCn8Y8y1irxhqFLqfa18weo8ppmB7rKI=";
 
       src = ./.;
     };
