@@ -4,6 +4,23 @@ use std::{io, fs};
 use std::path::{Path, PathBuf};
 use cmd_lib::run_fun;
 
+pub fn get_build_dir() -> PathBuf {
+    let expr = format!(r#"
+        let 
+            config = (import ./htldoc.nix {{ }});
+        in if builtins.hasAttr "htldocBuildDir" config then config.htldocBuildDir else "build"
+    "#);
+    let res = run_fun!(nix eval --expr $expr --raw).unwrap("couldn't determine the build_dir");
+
+    let res_path = PathBuf::from(res);
+
+    if res_path.is_absolute() {
+        return res_path;
+    } else {
+        return PathBuf::from(format!("{}/{}", std::env::current_dir().unwrap().display(), res));
+    }
+}
+
 pub fn nixpkgs_version() -> String {
     // get the nixpkgs version to use
     // use the nixpkgs version from the nixos-version command, if available by default

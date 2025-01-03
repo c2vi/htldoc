@@ -7,6 +7,7 @@ import git
 import json
 from datetime import datetime
 from pathlib import Path
+from shutil import copyfile
 
 def main(repo_path, config_path):
     try:
@@ -14,12 +15,11 @@ def main(repo_path, config_path):
         with open(config_path, "r") as config_file:
             config = json.load(config_file)
 
-        branch_name = config["branch_name"]
-        start_commit = config["start_commit"]
+        branch_name = config["branch"]
+        start_commit = config["startCommit"]
         pdf_output_dir = config["pdf_output_dir"]
         html_index_file = config["html_index_file"]
-        github_repo_url = config["github_repo_url"]
-        predefined_command = config["predefined_command"]
+        github_repo_url = config["githubRepoUrl"]
 
         # Ensure the output directory exists
         os.makedirs(pdf_output_dir, exist_ok=True)
@@ -55,7 +55,8 @@ def main(repo_path, config_path):
             pdf_filepath = os.path.join(pdf_output_dir, pdf_filename)
 
             try:
-                result = subprocess.run(predefined_command + [pdf_filepath], check=True)
+                result = subprocess.run("htldoc build", check=True)
+                copyfile("./build/out.pdf", pdf_filepath)
             except subprocess.CalledProcessError as e:
                 print(f"Error generating PDF for commit {commit.hexsha}: {e}")
                 continue

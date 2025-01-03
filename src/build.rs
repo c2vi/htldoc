@@ -36,7 +36,7 @@ pub enum SrcFileType {
 
 pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     let mut src_dir = std::env::current_dir().map_err(|e| format!("{}", e))?;
-    let build_dir = src_dir.as_path().join("build");
+    let build_dir = crate::utils::get_build_dir();
     let htldoc_version = crate::utils::htldoc_version();
     let nixpkgs_rev = crate::utils::nixpkgs_version();
     let template_dir = crate::utils::template_dir(htldoc_version.as_str());

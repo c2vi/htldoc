@@ -65,6 +65,11 @@ fn cli_matches() -> clap::ArgMatches {
                 Command::new("build")
                 .aliases(["b"])
             )
+        .subcommand(
+            Command::new("gen-listing")
+                .about("Generate a html listing of all the pdfs generated from every commit that changed the documentation")
+                .aliases(["gl"])
+        )
         .arg_required_else_help(true);
 
     return main.get_matches();
