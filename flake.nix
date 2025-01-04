@@ -5,24 +5,28 @@
 		nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
 
  	  flake-utils.url = "github:numtide/flake-utils";
+
+    crane = {
+      url = "github:ipetkov/crane";
+    };
+
   };
 
 
-  outputs = { self, nixpkgs, flake-utils, ... }@inputs: flake-utils.lib.eachDefaultSystem (system: 
+  outputs = { self, nixpkgs, flake-utils, crane, ... }@inputs: flake-utils.lib.eachDefaultSystem (system: 
   let
     pkgs = nixpkgs.legacyPackages.${system};
+    craneLib = crane.mkLib pkgs;
   in
   {
-    packages.default = pkgs.rustPlatform.buildRustPackage rec {
-      pname = "htldoc";
-      version = "0.1.0";
 
-      nativeBuildInputs = with pkgs; [ nix coreutils rsync ];
+    packages.default = craneLib.buildPackage {
+      src = craneLib.cleanCargoSource ./.;
 
-      cargoSha256 = "sha256-471XHhfRxbrmCn8Y8y1irxhqFLqfa18weo8ppmB7rKI=";
-
-      src = ./.;
+      buildInputs = with pkgs; [ nix coreutils rsync ];
     };
+
+
 
     devShells.default = pkgs.mkShell {
       buildInputs = with pkgs; [ texlive.combined.scheme-full ];

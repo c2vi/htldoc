@@ -1,90 +1,100 @@
+use std::collections::HashMap;
+use std::fs::{self, File};
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::str;
+use chrono::NaiveDateTime;
+use clap::ArgMatches;
+use git2::{Repository, Commit};
+use sha2::{Digest, Sha256};
 use cmd_lib::run_fun;
 use cmd_lib::run_cmd;
+use serde::Deserialize;
 
 
-pub fn run() -> Result<(), String> {
+#[derive(Deserialize)]
+struct Config {
+    #[serde(rename = "branch")]
+    branch_name: String,
+
+    #[serde(rename = "startCommit")]
+    start_commit: String,
+
+    pdf_output_dir: String,
+
+    html_index_file: String,
+
+    #[serde(rename = "githubRepoUrl")]
+    github_repo_url: String,
+}
+
+
+
+pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
     let nixpkgs_version = crate::utils::nixpkgs_version();
+    let htldoc_version = crate::utils::htldoc_version();
     let build_dir = crate::utils::get_build_dir();
+    let src_dir = std::env::current_dir().unwrap();
 
 
     // write the config.json for the script.py
     let expr = format!(r#"
         let 
             config = (import ./htldoc.nix {{ }});
-            default = {
+            default = {{
                 branch = "master";
-                pdf_output_dir = {build_dir}/listings
-                html_index_file = {build_dir}/listings/index.html
+                pdf_output_dir = "{}/listing";
+                html_index_file = "{}/listing/index.html";
                 githubRepoUrl = "";
-            };
-        in default // config.genListing
-    "#);
-    run_cmd!(nix eval --expr ${expr} --json > ${build_dir}/gen_log_config.json);
+                startCommit = "";
+            }};
+        in default // (if builtins.hasAttr "genListing" config then config.genListing else {{ }})
+    "#, build_dir.display(), build_dir.display());
+    run_cmd!(nix eval --expr ${expr} --impure --json > ${build_dir}/gen_listing_config.json).unwrap();
 
 
     // create the listing dir in the build_dir
-    run_cmd!(mkdir -p ${build_dir}/listing);
+    run_cmd!(mkdir -p ${build_dir}/listing).unwrap();
 
 
     // create the listing_src dir
-    run_cmd!(mkdir -p ${build_dir}/listing);
+    run_cmd!(mkdir -p ${build_dir}/listing_src).unwrap();
 
 
-    // run the python script
-
-
-use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::{Read, Write};
-use std::path::Path;
-use std::process::Command;
-use std::str;
-use chrono::NaiveDateTime;
-use git2::{Repository, Commit};
-use serde::Deserialize;
-use sha2::{Digest, Sha256};
-
-#[derive(Deserialize)]
-struct Config {
-    branch_name: String,
-    start_commit: String,
-    pdf_output_dir: String,
-    html_index_file: String,
-    github_repo_url: String,
-    predefined_command: Vec<String>,
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 || args[1] != "--config" {
-        eprintln!("Usage: cargo run -- --config <path_to_config_json>");
-        std::process::exit(1);
-    }
-
-    let config_path = &args[2];
-    let config: Config = serde_json::from_reader(File::open(config_path)?)?;
+    // run the ChatGPT generated code, that actually builds all pdfs
+    let config_path = format!("{}/gen_listing_config.json", build_dir.display());
+    let mut config: Config = serde_json::from_reader(File::open(config_path).unwrap()).unwrap();
 
     // Ensure output directory exists
-    fs::create_dir_all(&config.pdf_output_dir)?;
+    fs::create_dir_all(&config.pdf_output_dir).unwrap();
 
-    // Open the Git repository
-    let repo = Repository::open(".")?;
+    // Clone the git repo at
+    let src_repo_base_dir = Repository::discover_path(src_dir, Vec::<PathBuf>::new()).unwrap();
+    run_cmd!(rm -rf ${build_dir}/listing_src).unwrap();
+    run_cmd!(mkdir -p ${build_dir}/listing_src).unwrap();
+    let repo = Repository::clone(src_repo_base_dir.to_str().unwrap(), format!("{}/listing_src", build_dir.display())).unwrap();
 
     // Get the target branch
-    let branch = repo.find_branch(&config.branch_name, git2::BranchType::Local)?;
-    let branch_commit = branch.get().peel_to_commit()?;
+    let branch = repo.find_branch(&config.branch_name, git2::BranchType::Local).unwrap();
+    let branch_commit = branch.get().peel_to_commit().unwrap();
 
     // Start processing commits
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push(branch_commit.id())?;
+    let mut revwalk = repo.revwalk().unwrap();
+    revwalk.push(branch_commit.id()).unwrap();
 
     let mut found_start_commit = false;
     let mut last_pdf_hash: Option<String> = None;
     let mut commit_list = Vec::new();
 
+    // if config.start_commit is empty, start at the first commit of the branch
+    if config.start_commit.as_str() == "" {
+        config.start_commit = format!("{}", branch_commit.id());
+    }
+
     for oid in revwalk {
-        let oid = oid?;
-        let commit = repo.find_commit(oid)?;
+        let oid = oid.unwrap();
+        let commit = repo.find_commit(oid).unwrap();
 
         if !found_start_commit {
             if commit.id().to_string() == config.start_commit {
@@ -95,28 +105,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Checkout the commit
-        repo.checkout_tree(&commit.as_object(), None)?;
-        repo.set_head_detached(commit.id())?;
+        repo.checkout_tree(&commit.as_object(), None).unwrap();
+        repo.set_head_detached(commit.id()).unwrap();
 
-        // Run the predefined command
+        // build the pdf for this commit
+        println!("building pdf for commit: {}", commit.id());
         let pdf_filename = format!("{}.pdf", commit.id());
         let pdf_filepath = Path::new(&config.pdf_output_dir).join(&pdf_filename);
 
-        let output = Command::new(&config.predefined_command[0])
-            .args(&config.predefined_command[1..])
-            .arg(&pdf_filepath)
-            .output()?;
+        let verbose_flag = match sub_matches.get_flag("verbose") {
+            true => "-v",
+            false => "",
+        };
 
-        if !output.status.success() {
-            eprintln!("Error generating PDF for commit {}: {:?}", commit.id(), output);
-            continue;
-        }
+        run_cmd!( cd ${build_dir}/listing_src; nix run ${htldoc_version} -- build $verbose_flag).unwrap();
+        run_cmd!( cp ${build_dir}/listing_src/build/out.pdf ${pdf_filepath} ).unwrap(); // will break when the htldocBuildDir is not set to "build"
+                                                                              // TODO: be able to pass a --config htldoc_version=build
+
 
         // Check if the PDF content has changed
-        let current_pdf_hash = calculate_file_hash(&pdf_filepath)?;
+        let current_pdf_hash = calculate_file_hash(&pdf_filepath).unwrap();
         if let Some(last_hash) = &last_pdf_hash {
             if *last_hash == current_pdf_hash {
-                fs::remove_file(&pdf_filepath)?;
+                fs::remove_file(&pdf_filepath).unwrap();
                 continue;
             }
         }
@@ -131,7 +142,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Generate the HTML index
-    generate_html_index(&commit_list, &config.html_index_file, &config.github_repo_url, &config.pdf_output_dir)?;
+    generate_html_index(&commit_list, &config.html_index_file, &config.github_repo_url, &config.pdf_output_dir).unwrap();
     println!("Processing complete. HTML index generated.");
 
     Ok(())
@@ -176,7 +187,6 @@ fn generate_html_index(
 
     file.write_all(b"</ul></body></html>")?;
     Ok(())
-}
 }
 
 

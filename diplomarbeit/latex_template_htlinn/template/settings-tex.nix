@@ -127,6 +127,7 @@ else
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% then the setboolean settings
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \setboolean{myaddcolophon}{true}  %% "true" or "false"
 %% If set to "true": a colophon (with notes about this document
 %% template, LaTeX, ...) is added after the title page.
@@ -155,6 +156,9 @@ else
 \newcommand{\myauthor}{${lib.strings.concatStringsSep ''\\'' config.authors}}
 \newcommand{\mysupervisor}{${lib.strings.concatStringsSep ''\\'' config.supervisors}}
 \newcommand{\myprojectpartner}{${config.partner}}
+
+\newboolean{haveProjectPartner}
+\setboolean{haveProjectPartner}{${if config.partner == "" then "false" else "true"}} 
 
 \newcommand{\mysubject}{${config.subject}}  %% also used for PDF metadata (hyperref)
 \newcommand{\mykeywords}{${lib.strings.concatStringsSep " " config.keywords}}  %% also used for PDF metadata (hyperref)

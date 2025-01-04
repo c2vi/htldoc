@@ -155,7 +155,7 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
                 lib = pkgs.lib;
                 defaultConfig = import {}/diplomarbeit/default-config.nix {{ }};
                 userConfig = import {}/htldoc.nix {{ }};
-                config = userConfig // defaultConfig // {{ chapters_text = "{chapter_text}"; }};
+                config = defaultConfig // userConfig // {{ chapters_text = "{chapter_text}"; }};
             in import {}/diplomarbeit/latex_template_htlinn/template/settings-tex.nix {{ inherit config lib; }}
         "#, template_dir.display(), src_dir.display(), template_dir.display()))
         .output().expect("failed to eval the $template/diplomarbeit/latex_template_htlinn/template/settings-tex.nix")

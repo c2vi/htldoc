@@ -4,6 +4,7 @@ use clap::{Arg, crate_version, Command};
 pub mod init;
 pub mod utils;
 pub mod build;
+pub mod gen_listing;
 
 fn main() {
 
@@ -18,6 +19,8 @@ fn main() {
         Some(("init", sub_matches)) => init::run(sub_matches),
 
         Some(("build", sub_matches)) => build::run(sub_matches),
+
+        Some(("gen-listing", sub_matches)) => gen_listing::run(sub_matches),
 
         _ => Err("invalid command".to_owned())
     };

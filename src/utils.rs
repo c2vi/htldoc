@@ -10,9 +10,9 @@ pub fn get_build_dir() -> PathBuf {
             config = (import ./htldoc.nix {{ }});
         in if builtins.hasAttr "htldocBuildDir" config then config.htldocBuildDir else "build"
     "#);
-    let res = run_fun!(nix eval --expr $expr --raw).unwrap("couldn't determine the build_dir");
+    let res = run_fun!(nix eval --expr $expr --raw --impure).expect("couldn't determine the build_dir");
 
-    let res_path = PathBuf::from(res);
+    let res_path = PathBuf::from(res.clone());
 
     if res_path.is_absolute() {
         return res_path;
