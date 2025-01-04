@@ -182,6 +182,7 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
     };
 
     println!("################### RUNNING PDFLATEX ###################");
+    println!("pass --verbose to see pdflatex output");
     let build_output = Command::new("nix")
         .current_dir(build_dir.as_path())
         .arg("shell")

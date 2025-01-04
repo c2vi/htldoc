@@ -81,6 +81,7 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
 
     // Start processing commits
     let mut revwalk = repo.revwalk().unwrap();
+    revwalk.set_sorting(git2::Sort::TIME.union(git2::Sort::REVERSE));
     revwalk.push(branch_commit.id()).unwrap();
 
     let mut found_start_commit = false;
@@ -118,9 +119,19 @@ pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
             false => "",
         };
 
+        // TODO, this runs the htldoc version of the newest version.... should run the one, that
+        // was pinned on the commit we are building
+        // a problem: if there was a local version pinned once, that is no longer available....
+        // so i'd say: be able to override to always use the newest version
         run_cmd!( cd ${build_dir}/listing_src; nix run ${htldoc_version} -- build $verbose_flag).unwrap();
-        run_cmd!( cp ${build_dir}/listing_src/build/out.pdf ${pdf_filepath} ).unwrap(); // will break when the htldocBuildDir is not set to "build"
-                                                                              // TODO: be able to pass a --config htldoc_version=build
+
+        // for Latex to generate the refs corectly, we need to build it twice.....
+        run_cmd!( cd ${build_dir}/listing_src; nix run ${htldoc_version} -- build $verbose_flag).unwrap();
+
+        // will break when the htldocBuildDir is not set to "build"
+        // TODO: be able to pass a --config htldoc_version=build
+        run_cmd!( cp ${build_dir}/listing_src/build/out.pdf ${pdf_filepath} ).unwrap(); 
+                                                                              
 
 
         // Check if the PDF content has changed
