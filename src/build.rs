@@ -190,12 +190,17 @@ pub fn build_dipl(template_dir: PathBuf, build_dir: PathBuf, src_dir: PathBuf, h
         .arg(format!("nixpkgs/{}#texlive.combined.scheme-full", nixpkgs_rev))
         .arg("-c")
         .arg("pdflatex")
+        .arg("-halt-on-error")
         .arg("main.tex")
         .stdout(stdout)
         .stderr(Stdio::inherit())
         .stdin(Stdio::inherit())
         .output().expect("pdflatex build command failed")
         ;
+
+    if !build_output.status.success() {
+        return Err("ERR: pdflatex command failed!!!!!! Run with -v flag to see pdflatex output.".to_owned());
+    }
     
 
     ////// move the main.pdf to out.pdf

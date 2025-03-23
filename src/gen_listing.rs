@@ -32,7 +32,7 @@ struct Config {
 
 
 pub fn run(sub_matches: &ArgMatches) -> Result<(), String> {
-    let nixpkgs_version = crate::utils::nixpkgs_version();
+    let _nixpkgs_version = crate::utils::nixpkgs_version();
     let htldoc_version = crate::utils::htldoc_version();
     let build_dir = crate::utils::get_build_dir();
     let src_dir = std::env::current_dir().unwrap();

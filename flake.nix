@@ -2,7 +2,7 @@
   description = "flake for htldoc";
 
   inputs = {
-		nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
+		nixpkgs.url = "github:NixOS/nixpkgs/release-24.11";
 
  	  flake-utils.url = "github:numtide/flake-utils";
 
@@ -29,7 +29,7 @@
 
 
     devShells.default = pkgs.mkShell {
-      buildInputs = with pkgs; [ texlive.combined.scheme-full ];
+      buildInputs = with pkgs; [ texlive.combined.scheme-full pandoc rsync ];
     };
 
 
